@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CFR Travel Expense Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- ExcelJS for 100% reliable in-browser Excel generation on Vercel & offline -->
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="brand">
+        <div class="brand-icon">⚡</div>
+        <div>
+          <h1>CFR Travel Voucher</h1>
+          <p class="subtitle">Quick Mobile Entry & Excel Generator</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-load-sample" class="btn btn-outline btn-sm" title="Load sample data">
+          <span>📋</span> Sample
+        </button>
+        <button id="btn-settings-toggle" class="btn btn-outline btn-sm" title="Profile Settings">
+          <span>⚙️</span> Profile
+        </button>
+        <button id="btn-preview-toggle" class="btn btn-primary btn-sm" title="Preview Company Excel">
+          <span>👁️</span> Preview
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Profile & Defaults Card (Collapsible) -->
+    <section id="profile-card" class="card profile-card collapsed">
+      <div class="card-header" id="profile-header-click">
+        <div class="card-title">
+          <span>👤</span>
+          <h3>Employee & Company Profile</h3>
+          <span class="badge badge-success" id="profile-saved-badge">Saved</span>
+        </div>
+        <span class="accordion-arrow">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label for="emp-name">Employee Name</label>
+            <input type="text" id="emp-name" class="input" placeholder="e.g. Sai Krishna Meesala">
+          </div>
+          <div class="form-group">
+            <label for="mgr-name">Reporting Manager</label>
+            <input type="text" id="mgr-name" class="input" placeholder="e.g. Kedar Narvekar">
+          </div>
+          <div class="form-group">
+            <label for="customer-name">Client / Customer</label>
+            <input type="text" id="customer-name" class="input" placeholder="e.g. NOVAMESH, COFORGE">
+          </div>
+          <div class="form-group">
+            <label for="month-expenses">Month of Expenses</label>
+            <input type="date" id="month-expenses" class="input">
+          </div>
+          <div class="form-group">
+            <label for="bike-rate">Bike Rate (₹ / KM)</label>
+            <input type="number" id="bike-rate" class="input" value="4" step="0.5">
+          </div>
+          <div class="form-group">
+            <label for="car-rate">Car Rate (₹ / KM)</label>
+            <input type="number" id="car-rate" class="input" value="10" step="0.5">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Multi-Day Tabs Bar -->
+    <section class="days-nav-section">
+      <div class="section-top">
+        <label class="section-label">Travel Days / Sheets</label>
+        <button id="btn-add-day" class="btn btn-sm btn-secondary">
+          <span>+</span> Add Day
+        </button>
+      </div>
+      <div class="days-tabs-scroll" id="days-tabs-container">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- Active Day Info Bar -->
+    <div class="day-meta-bar card">
+      <div class="day-meta-inputs">
+        <div class="meta-field">
+          <span class="meta-label">Date:</span>
+          <input type="date" id="active-day-date" class="input input-sm">
+        </div>
+        <div class="meta-field">
+          <span class="meta-label">Sheet Name:</span>
+          <input type="text" id="active-day-sheetname" class="input input-sm" placeholder="DD-MM-YYYY">
+        </div>
+      </div>
+      <div class="day-quick-actions">
+        <button id="btn-quick-food" class="btn btn-sm btn-food" title="Add standard ₹600 Food Allowance">
+          <span>🍽️</span> +₹600 Food
+        </button>
+        <button id="btn-reverse-trip" class="btn btn-sm btn-outline" title="Repeat last trip in reverse">
+          <span>🔄</span> Return Log
+        </button>
+        <button id="btn-delete-day" class="btn btn-sm btn-danger-ghost" title="Delete this day">
+          <span>🗑️</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Travel Log Entry Card -->
+    <section class="card entry-card" id="entry-card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>📍</span>
+          <h3 id="entry-card-title">Add Travel Log</h3>
+        </div>
+        <span class="badge badge-info" id="log-counter-badge">Log #1</span>
+      </div>
+
+      <div class="card-body">
+        <!-- 1. Route: From & To First -->
+        <div class="route-grid">
+          <div class="form-group">
+            <label for="log-from">From (Origin)</label>
+            <input type="text" id="log-from" class="input" placeholder="e.g. Machavaram" list="locations-list">
+          </div>
+          <button type="button" id="btn-swap-locations" class="btn-swap" title="Swap From and To">
+            ⇄
+          </button>
+          <div class="form-group">
+            <label for="log-to">To (Destination)</label>
+            <input type="text" id="log-to" class="input" placeholder="e.g. Guntur Bus Station" list="locations-list">
+          </div>
+        </div>
+
+        <datalist id="locations-list">
+          <!-- Populated dynamically with frequent locations -->
+        </datalist>
+
+        <!-- 2. Travel Mode Second -->
+        <div class="form-group">
+          <label class="field-label">Travel Mode</label>
+          <div class="mode-pill-grid" id="mode-pills">
+            <button type="button" class="mode-pill active" data-mode="bike">
+              <span class="pill-icon">🏍️</span>
+              <span class="pill-name">Bike</span>
+            </button>
+            <button type="button" class="mode-pill" data-mode="auto">
+              <span class="pill-icon">🛺</span>
+              <span class="pill-name">Auto</span>
+            </button>
+            <button type="button" class="mode-pill" data-mode="bus">
+              <span class="pill-icon">🚌</span>
+              <span class="pill-name">Bus</span>
+            </button>
+            <button type="button" class="mode-pill" data-mode="train">
+              <span class="pill-icon">🚆</span>
+              <span class="pill-name">Train</span>
+            </button>
+            <button type="button" class="mode-pill" data-mode="hamali">
+              <span class="pill-icon">📦</span>
+              <span class="pill-name">Hamali</span>
+            </button>
+            <button type="button" class="mode-pill" data-mode="food">
+              <span class="pill-icon">🍽️</span>
+              <span class="pill-name">Food</span>
+            </button>
+            <button type="button" class="mode-pill" data-mode="taxi">
+              <span class="pill-icon">🚕</span>
+              <span class="pill-name">Taxi</span>
+            </button>
+            <button type="button" class="mode-pill" data-mode="car">
+              <span class="pill-icon">🚗</span>
+              <span class="pill-name">Car</span>
+            </button>
+            <button type="button" class="mode-pill" data-mode="lodging">
+              <span class="pill-icon">🏨</span>
+              <span class="pill-name">Lodging</span>
+            </button>
+            <button type="button" class="mode-pill" data-mode="flight">
+              <span class="pill-icon">✈️</span>
+              <span class="pill-name">Flight</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. Amount & Distance (KM) Third -->
+        <div class="grid grid-2" id="calc-grid">
+          <div class="form-group" id="km-group">
+            <label for="log-km">Distance (KM)</label>
+            <div class="input-with-calc">
+              <input type="number" id="log-km" class="input" placeholder="e.g. 10" step="0.1">
+              <div class="calc-badge" id="calc-badge">
+                <span id="calc-preview">10 km × ₹4 = ₹40</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="log-amount" id="amount-label">Amount (₹)</label>
+            <input type="number" id="log-amount" class="input input-highlight" placeholder="0" step="1">
+          </div>
+        </div>
+
+        <!-- 4. Purpose & Quick Chips Fourth -->
+        <div class="form-group">
+          <label for="log-purpose">Purpose / Issue Description</label>
+          <input type="text" id="log-purpose" class="input" placeholder="e.g. Collect material from HUB">
+          <div class="chips-container" id="purpose-chips">
+            <button type="button" class="chip">to Collect material From HUB</button>
+            <button type="button" class="chip">after maeterial collect to home and check contents</button>
+            <button type="button" class="chip">going to guntur with material Box Chassis</button>
+            <button type="button" class="chip">Chassis replacement complete</button>
+            <button type="button" class="chip">Going to hometown bus</button>
+            <button type="button" class="chip">Going to home by auto</button>
+            <button type="button" class="chip">Hamali pickup Package</button>
+            <button type="button" class="chip">Cash Payment</button>
+          </div>
+        </div>
+
+        <!-- Submit & Edit Actions -->
+        <div class="entry-actions-row">
+          <button type="button" id="btn-submit-log" class="btn btn-primary btn-block btn-lg">
+            <span>+</span> Add Travel Log
+          </button>
+          <button type="button" id="btn-cancel-edit" class="btn btn-secondary btn-lg hidden">
+            Cancel Edit
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Current Day Logs List -->
+    <section class="card logs-list-card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>📋</span>
+          <h3 id="logs-card-title">Travel Logs for this Day</h3>
+        </div>
+        <span class="badge badge-primary" id="day-logs-count">0 logs</span>
+      </div>
+
+      <div class="card-body">
+        <div id="logs-timeline" class="legs-timeline">
+          <!-- Rendered by JS -->
+        </div>
+
+        <!-- Day Financial Summary -->
+        <div class="day-summary-box">
+          <div class="summary-row">
+            <span>Day Subtotal:</span>
+            <strong class="font-mono" id="day-subtotal-val">₹0</strong>
+          </div>
+          <div class="summary-row">
+            <span>Advances Received:</span>
+            <div class="advance-input-wrap">
+              <span>₹</span>
+              <input type="number" id="day-advances" class="input input-sm font-mono" value="0" min="0">
+            </div>
+          </div>
+          <div class="summary-row total-highlight">
+            <span>Day Net Claim:</span>
+            <strong class="font-mono total-amount" id="day-reimbursement-val">₹0</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Overall Total & Big Export Bar -->
+    <section class="export-floating-bar">
+      <div class="export-bar-content">
+        <div class="overall-totals">
+          <span class="overall-label">Grand Total (All Days):</span>
+          <span class="overall-val font-mono" id="grand-total-val">₹0</span>
+        </div>
+        <button id="btn-export-excel" class="btn btn-success btn-lg">
+          <span>📥</span> Download Excel (.xlsx)
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Live Company Excel Preview Modal -->
+  <div id="preview-modal" class="modal-overlay hidden">
+    <div class="modal-window">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>👁️</span>
+          <h3>Company Excel Format Preview</h3>
+        </div>
+        <div class="modal-header-actions">
+          <select id="preview-sheet-select" class="input input-sm">
+            <!-- Sheet options populated by JS -->
+          </select>
+          <button id="btn-close-modal" class="btn-icon">&times;</button>
+        </div>
+      </div>
+
+      <div class="modal-body excel-preview-wrapper">
+        <div id="excel-preview-table-container">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <span class="preview-note">✓ Guarantees 100% exact layout, headers, and footer sign-off blocks.</span>
+        <button id="btn-modal-export" class="btn btn-success">
+          <span>📥</span> Download Excel (.xlsx)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

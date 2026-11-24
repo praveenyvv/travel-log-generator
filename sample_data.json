@@ -1,0 +1,192 @@
+{
+  "employeeName": "Sai Krishna Meesala",
+  "reportingManager": "Kedar Narvekar",
+  "customerName": "NOVAMESH, COFORGE",
+  "monthOfExpenses": "2026-10-10",
+  "bikeRate": 4.0,
+  "carRate": 10.0,
+  "days": [
+    {
+      "date": "2026-10-09",
+      "sheetName": "09-10-2026",
+      "advances": 0,
+      "legs": [
+        {
+          "from": "Machavaram",
+          "to": "Kasukarru",
+          "purpose": "to Collect material From HUB",
+          "mode": "bike",
+          "km": 10.0,
+          "amount": 40.0
+        },
+        {
+          "from": "kasukarru",
+          "to": "Machavaram (home)",
+          "purpose": "after maeterial collect  to home and check contents",
+          "mode": "bike",
+          "km": 10.0,
+          "amount": 40.0
+        },
+        {
+          "from": "Machavaram (home)",
+          "to": "Ponnur",
+          "purpose": "going to guntur with material Box Chassis",
+          "mode": "bike",
+          "km": 8.0,
+          "amount": 32.0
+        },
+        {
+          "from": "Ponnur  bus station",
+          "to": "Guntur Bus Station",
+          "purpose": "going to guntur from ponnur  with material Box Chassis",
+          "mode": "bus",
+          "km": null,
+          "amount": 30.0
+        },
+        {
+          "from": "Guntur Bus Station",
+          "to": "Tobacco Board HeadQuarters ( APF Ongole-20)",
+          "purpose": "going to guntur Tobacco Board head Office with material Box Chassis",
+          "mode": "auto",
+          "km": null,
+          "amount": 100.0
+        },
+        {
+          "from": "Tobacco Board HeadQuarters ( APF Ongole-20)",
+          "to": "Guntur Bus Station",
+          "purpose": "Chassis replacement complete going to Guntur Bus station",
+          "mode": "auto",
+          "km": null,
+          "amount": 130.0
+        },
+        {
+          "from": "Guntur Bus Station",
+          "to": "Ponnur  bus station",
+          "purpose": "Going to hometown bus",
+          "mode": "bus",
+          "km": null,
+          "amount": 30.0
+        },
+        {
+          "from": "Ponnur  bus station",
+          "to": "Machavaram",
+          "purpose": "Going to home by auto",
+          "mode": "auto",
+          "km": null,
+          "amount": 80.0
+        },
+        {
+          "from": "FOOD -BreakFast,LUNCH,DINNER",
+          "to": "FOOD Allowances",
+          "purpose": "FOOD Allowance",
+          "mode": "food",
+          "km": null,
+          "amount": 600.0
+        }
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "sheetName": "10-10-2026",
+      "advances": 0,
+      "legs": [
+        {
+          "from": "Machavaram  Railway Station",
+          "to": "Vijayawada Railway Station",
+          "purpose": "Went to Collect material From HUB",
+          "mode": "train",
+          "km": null,
+          "amount": 20.0
+        },
+        {
+          "from": "Vijayawada Railway Station Hamali pickup Package",
+          "to": "Shimpment package to Vijayawada Railway Station SouthGate Exit",
+          "purpose": "after maeterial collect  to home and check contents",
+          "mode": "hamali",
+          "km": null,
+          "amount": 150.0
+        },
+        {
+          "from": "Vijayawada Railway Station",
+          "to": "Vijayawada BUS Station",
+          "purpose": "going to Vijayawada with material Box Chassis",
+          "mode": "auto",
+          "km": null,
+          "amount": 250.0
+        },
+        {
+          "from": "Vijayawada BUS Station  Entrance gate Hamali",
+          "to": "Vijayawada BUS Station  PLATFORM 15 (JangareddyGudem Bus arrival Point)",
+          "purpose": "Going to Vijayawada bus station  with material Box Chassis",
+          "mode": "hamali",
+          "km": null,
+          "amount": 100.0
+        },
+        {
+          "from": "Vijayawada BUS Station",
+          "to": "JangareddyGudem  Bus Station",
+          "purpose": "Going to jangareddyGudem bus station  with material Box Chassis",
+          "mode": "bus",
+          "km": null,
+          "amount": 200.0
+        },
+        {
+          "from": "JangareddyGudem  Bus Station",
+          "to": "JangareddyGudem Tobacco Board ( APF JangareddyGudem -32)",
+          "purpose": "way to Tobacco board in auto",
+          "mode": "auto",
+          "km": null,
+          "amount": 150.0
+        },
+        {
+          "from": "JangareddyGudem Tobacco Board",
+          "to": "JangareddyGudem  Bus Station",
+          "purpose": "Return To Bus station after work Finish",
+          "mode": "auto",
+          "km": null,
+          "amount": 150.0
+        },
+        {
+          "from": "JangareddyGudem  Bus Station",
+          "to": "Vijayawada BUS Station",
+          "purpose": "back Vijayawada BUS Station",
+          "mode": "bus",
+          "km": null,
+          "amount": 200.0
+        },
+        {
+          "from": "Vijayawada BUS Station",
+          "to": "Appikatla Bus Station",
+          "purpose": "back Appikatla Bus Station",
+          "mode": "bus",
+          "km": null,
+          "amount": 135.0
+        },
+        {
+          "from": "Appikatla Bus Station",
+          "to": "Mulukuduru  X road",
+          "purpose": "Mulukuduru X roads (Cash Payment)",
+          "mode": "auto",
+          "km": null,
+          "amount": 200.0
+        },
+        {
+          "from": "Mulukuduru  X road",
+          "to": "Machavaram (Home)",
+          "purpose": "reached Home (Cash Payment)",
+          "mode": "auto",
+          "km": null,
+          "amount": 150.0
+        },
+        {
+          "from": "FOOD -BreakFast,LUNCH,DINNER",
+          "to": "FOOD Allowances",
+          "purpose": "Food Allowances",
+          "mode": "food",
+          "km": null,
+          "amount": 600.0
+        }
+      ]
+    }
+  ]
+}
