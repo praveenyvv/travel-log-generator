@@ -1,9 +1,9 @@
-// CFR Travel Expense Assistant - Client Logic (with in-place editing & ExcelJS export)
+// CFR Travel Expense Assistant - Optimized for Mobile & In-Place Editing
 
 (function () {
   'use strict';
 
-  const STORAGE_KEY = 'cfr_voucher_state_v2';
+  const STORAGE_KEY = 'cfr_voucher_state_v3';
 
   const defaultLocations = [
     'Machavaram',
@@ -35,13 +35,13 @@
         date: '2026-10-09',
         sheetName: '09-10-2026',
         advances: 0,
-        legs: [] // internally maintained as legs/logs for backward compatibility
+        legs: []
       }
     ]
   };
 
   let activeMode = 'bike';
-  let editingLogIndex = -1; // -1 means adding new log; >= 0 means editing existing log
+  let editingLogIndex = -1;
 
   // DOM Elements
   const empNameInput = document.getElementById('emp-name');
@@ -52,11 +52,12 @@
   const carRateInput = document.getElementById('car-rate');
   const profileCard = document.getElementById('profile-card');
   const profileHeaderClick = document.getElementById('profile-header-click');
+  const profileDisplayName = document.getElementById('profile-display-name');
+  const profileDisplaySub = document.getElementById('profile-display-sub');
 
   const daysTabsContainer = document.getElementById('days-tabs-container');
   const btnAddDay = document.getElementById('btn-add-day');
   const activeDayDateInput = document.getElementById('active-day-date');
-  const activeDaySheetNameInput = document.getElementById('active-day-sheetname');
   const btnDeleteDay = document.getElementById('btn-delete-day');
 
   const entryCard = document.getElementById('entry-card');
@@ -90,7 +91,6 @@
   const btnExportExcel = document.getElementById('btn-export-excel');
   const btnModalExport = document.getElementById('btn-modal-export');
   const btnLoadSample = document.getElementById('btn-load-sample');
-  const btnSettingsToggle = document.getElementById('btn-settings-toggle');
   const btnPreviewToggle = document.getElementById('btn-preview-toggle');
   const btnCloseModal = document.getElementById('btn-close-modal');
   const previewModal = document.getElementById('preview-modal');
@@ -101,7 +101,7 @@
   // Persistence
   function loadSavedState() {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('cfr_voucher_state_v1');
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('cfr_voucher_state_v2') || localStorage.getItem('cfr_voucher_state_v1');
       if (saved) {
         const parsed = JSON.parse(saved);
         state = { ...state, ...parsed };
@@ -119,7 +119,7 @@
     }
   }
 
-  function showToast(message, duration = 2500) {
+  function showToast(message, duration = 2200) {
     toast.textContent = message;
     toast.classList.remove('hidden');
     setTimeout(() => {
@@ -127,7 +127,6 @@
     }, duration);
   }
 
-  // Init
   function init() {
     loadSavedState();
     syncProfileUI();
@@ -145,6 +144,9 @@
     monthInput.value = state.monthOfExpenses || '';
     bikeRateInput.value = state.bikeRate || 4.0;
     carRateInput.value = state.carRate || 10.0;
+
+    profileDisplayName.textContent = state.employeeName || 'Tap to set Employee Profile';
+    profileDisplaySub.textContent = `${state.customerName || 'NOVAMESH'} • ₹${state.bikeRate || 4}/km Bike`;
   }
 
   function updateLocationsDataList() {
@@ -201,7 +203,6 @@
     if (!day) return;
 
     activeDayDateInput.value = day.date || '';
-    activeDaySheetNameInput.value = day.sheetName || '';
     dayAdvancesInput.value = day.advances || 0;
 
     renderLogsTimeline();
@@ -242,7 +243,6 @@
     grandTotalVal.textContent = `₹${grand.toLocaleString('en-IN')}`;
   }
 
-  // Travel Mode Handler
   function updateModeUI(mode) {
     activeMode = mode;
     modePills.forEach(pill => {
@@ -297,15 +297,14 @@
     other: '🏷️'
   };
 
-  // Render Logs List with Edit & Delete actions
   function renderLogsTimeline() {
     const day = getActiveDay();
     logsTimeline.innerHTML = '';
 
     if (!day || !day.legs || day.legs.length === 0) {
       logsTimeline.innerHTML = `
-        <div style="text-align: center; padding: 24px 10px; color: var(--text-light); font-size: 0.85rem;">
-          No travel logs added for this day yet.<br>Use the form above to quickly log your travel!
+        <div style="text-align: center; padding: 18px 10px; color: var(--text-light); font-size: 0.8rem;">
+          No logs added for this day yet.<br>Fill the form above to add your first travel log!
         </div>
       `;
       return;
@@ -335,7 +334,7 @@
         </div>
         <div class="log-actions">
           <button type="button" class="btn-edit-log" title="Edit this log" data-index="${idx}">
-            ✏️ Edit
+            ✏️
           </button>
           <button type="button" class="btn-del-leg" title="Delete log" data-index="${idx}">
             ✕
@@ -357,7 +356,6 @@
     });
   }
 
-  // Edit Log Mode
   function startEditingLog(index) {
     const day = getActiveDay();
     if (!day || !day.legs[index]) return;
@@ -365,7 +363,6 @@
     editingLogIndex = index;
     const log = day.legs[index];
 
-    // Populate form with existing values
     logFromInput.value = log.from || '';
     logToInput.value = log.to || '';
     logPurposeInput.value = log.purpose || '';
@@ -377,7 +374,6 @@
       recalcKmCost();
     }
 
-    // Switch UI to edit mode
     entryCard.classList.add('is-editing');
     entryCardTitle.textContent = `Edit Travel Log #${index + 1}`;
     logCounterBadge.textContent = `Editing #${index + 1}`;
@@ -400,7 +396,6 @@
     btnSubmitLog.className = 'btn btn-primary btn-block btn-lg';
     btnCancelEdit.classList.add('hidden');
 
-    // Clear form
     logFromInput.value = '';
     logToInput.value = '';
     logKmInput.value = '';
@@ -436,16 +431,13 @@
     };
 
     if (editingLogIndex >= 0) {
-      // Update existing log
       day.legs[editingLogIndex] = logData;
       showToast(`✓ Log #${editingLogIndex + 1} updated`);
       cancelEdit();
     } else {
-      // Add new log
       day.legs.push(logData);
       showToast(`✓ Log #${day.legs.length} added`);
 
-      // Chain: keep 'To' as next default 'From'
       logFromInput.value = toVal;
       logToInput.value = '';
       logKmInput.value = '';
@@ -476,7 +468,6 @@
     showToast('Log removed');
   }
 
-  // Quick Actions
   function addQuickFood() {
     const day = getActiveDay();
     if (!day) return;
@@ -683,11 +674,9 @@
     excelPreviewTableContainer.innerHTML = html;
   }
 
-  // Excel Export: supports both Backend API and In-Browser ExcelJS
   async function exportExcel() {
     showToast('⏳ Generating company voucher Excel...');
 
-    // First try backend /api/export if available
     try {
       const response = await fetch('/api/export', {
         method: 'POST',
@@ -702,10 +691,9 @@
         return;
       }
     } catch (e) {
-      console.log('Backend export unavailable, generating via in-browser ExcelJS engine...');
+      console.log('Backend export unavailable, using in-browser ExcelJS engine...');
     }
 
-    // Direct in-browser Excel generation via ExcelJS (works on Vercel & offline!)
     try {
       if (typeof ExcelJS === 'undefined') {
         throw new Error('ExcelJS library not loaded');
@@ -744,7 +732,6 @@
       const sheetTitle = (day.sheetName || day.date || `Day ${dayIdx + 1}`).replace(/[\/\\:?*\[\]]/g, '-').slice(0, 31);
       const ws = wb.addWorksheet(sheetTitle);
 
-      // Set column widths matching original
       ws.columns = [
         { key: 'A', width: 4 },
         { key: 'B', width: 8 },
@@ -769,7 +756,6 @@
         { key: 'U', width: 12 }
       ];
 
-      // Top block
       ws.getCell('C2').value = 'Expense Report';
       ws.getCell('C2').font = { bold: true, size: 14 };
       ws.mergeCells('C2:G2');
@@ -792,7 +778,6 @@
       ws.getCell('E5').value = month;
       ws.mergeCells('E5:G5');
 
-      // Header row 7
       const h7 = {
         B: 'Sr. No', C: 'DATE\nDD-MM-YYYY', D: 'Customer Name', E: 'From', F: 'To',
         G: 'Total KM For Car/Bike', I: 'Purpose of Travel /\nIssue Description',
@@ -807,7 +792,6 @@
         cell.border = thinBorder;
       });
 
-      // Header row 8
       const h8 = {
         G: 'Car/Bike', H: 'KM', K: 'Flight', L: 'Bus', M: 'Auto', N: 'Taxi', O: 'Bike', P: 'Car', Q: 'Train'
       };
@@ -820,12 +804,10 @@
         cell.border = thinBorder;
       });
 
-      // Header Merges
       ['B7:B8', 'C7:C8', 'D7:D8', 'E7:E8', 'F7:F8', 'G7:H7', 'I7:I8', 'J7:J8', 'K7:Q7', 'R7:T8', 'U7:U8'].forEach(m => {
         try { ws.mergeCells(m); } catch (e) {}
       });
 
-      // Data rows starting from Row 9
       const logs = day.legs || [];
       let currRow = 9;
       let daySubtotal = 0;
@@ -870,8 +852,7 @@
         ws.mergeCells(`R${r}:T${r}`);
         ws.getCell(`U${r}`).value = amt;
 
-        // Apply borders & alignment
-        for (let colCode = 66; colCode <= 85; colCode++) { // B to U
+        for (let colCode = 66; colCode <= 85; colCode++) {
           const colLtr = String.fromCharCode(colCode);
           const cell = ws.getCell(`${colLtr}${r}`);
           cell.border = thinBorder;
@@ -885,9 +866,8 @@
         currRow++;
       });
 
-      currRow += 2; // Spacing
+      currRow += 2;
 
-      // Subtotal
       ws.getCell(`Q${currRow}`).value = 'SUBTOTAL';
       ws.getCell(`Q${currRow}`).font = { bold: true };
       ws.mergeCells(`Q${currRow}:T${currRow}`);
@@ -898,7 +878,6 @@
       ws.getCell(`U${currRow}`).border = thinBorder;
       currRow++;
 
-      // Advances
       const adv = Number(day.advances) || 0;
       ws.getCell(`Q${currRow}`).value = 'ADVANCES';
       ws.getCell(`Q${currRow}`).font = { bold: true };
@@ -909,7 +888,6 @@
       ws.getCell(`U${currRow}`).border = thinBorder;
       currRow++;
 
-      // Total Reimbursement
       const netClaim = Math.max(0, daySubtotal - adv);
       ws.getCell(`Q${currRow}`).value = 'TOTAL REIMBURSEMENT';
       ws.getCell(`Q${currRow}`).font = { bold: true };
@@ -921,13 +899,11 @@
       ws.getCell(`U${currRow}`).border = thinBorder;
       currRow++;
 
-      // Receipt warning
       ws.getCell(`Q${currRow}`).value = "* Don't forget to attach receipts *";
       ws.getCell(`Q${currRow}`).font = { italic: true, bold: true, size: 10 };
       ws.mergeCells(`Q${currRow}:U${currRow}`);
       currRow += 3;
 
-      // Approval blocks
       ws.getCell(`C${currRow}`).value = 'Re Checked By';
       ws.getCell(`C${currRow}`).font = { bold: true };
       ws.mergeCells(`C${currRow}:J${currRow}`);
@@ -976,7 +952,6 @@
     window.URL.revokeObjectURL(url);
   }
 
-  // Load Reference Sample Data
   async function loadSampleData() {
     if (!confirm('Load reference sample data from October 9 & 10? This will replace current draft.')) {
       return;
@@ -989,7 +964,6 @@
       if (res.ok) {
         sample = await res.json();
       } else {
-        // Fallback embedded sample if backend not running
         sample = {
           employeeName: 'Sai Krishna Meesala',
           reportingManager: 'Kedar Narvekar',
@@ -1050,7 +1024,6 @@
     }
   }
 
-  // Event Listeners
   function attachEventListeners() {
     [empNameInput, mgrNameInput, custNameInput, monthInput, bikeRateInput, carRateInput].forEach(inp => {
       inp.addEventListener('input', () => {
@@ -1060,6 +1033,8 @@
         state.monthOfExpenses = monthInput.value;
         state.bikeRate = parseFloat(bikeRateInput.value) || 4.0;
         state.carRate = parseFloat(carRateInput.value) || 10.0;
+        profileDisplayName.textContent = state.employeeName || 'Tap to set Employee Profile';
+        profileDisplaySub.textContent = `${state.customerName || 'NOVAMESH'} • ₹${state.bikeRate || 4}/km Bike`;
         saveState();
         if (activeMode === 'bike' || activeMode === 'car') {
           recalcKmCost();
@@ -1069,13 +1044,6 @@
 
     profileHeaderClick.addEventListener('click', () => {
       profileCard.classList.toggle('collapsed');
-    });
-
-    btnSettingsToggle.addEventListener('click', () => {
-      profileCard.classList.toggle('collapsed');
-      if (!profileCard.classList.contains('collapsed')) {
-        profileCard.scrollIntoView({ behavior: 'smooth' });
-      }
     });
 
     modePills.forEach(pill => {
@@ -1111,16 +1079,7 @@
       if (day.date.includes('-')) {
         const parts = day.date.split('-');
         day.sheetName = `${parts[2]}-${parts[1]}-${parts[0]}`;
-        activeDaySheetNameInput.value = day.sheetName;
       }
-      renderDayTabs();
-      saveState();
-    });
-
-    activeDaySheetNameInput.addEventListener('input', () => {
-      const day = getActiveDay();
-      if (!day) return;
-      day.sheetName = activeDaySheetNameInput.value;
       renderDayTabs();
       saveState();
     });

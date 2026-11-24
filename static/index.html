@@ -2,32 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>CFR Travel Expense Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>CFR Travel Voucher</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <!-- ExcelJS for 100% reliable in-browser Excel generation on Vercel & offline -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- App Header -->
+  <!-- Compact Mobile App Header -->
   <header class="app-header">
     <div class="header-content">
       <div class="brand">
         <div class="brand-icon">⚡</div>
-        <div>
-          <h1>CFR Travel Voucher</h1>
-          <p class="subtitle">Quick Mobile Entry & Excel Generator</p>
+        <div class="brand-text">
+          <h1>CFR Voucher</h1>
+          <p class="subtitle">Field Travel Assistant</p>
         </div>
       </div>
       <div class="header-actions">
         <button id="btn-load-sample" class="btn btn-outline btn-sm" title="Load sample data">
           <span>📋</span> Sample
-        </button>
-        <button id="btn-settings-toggle" class="btn btn-outline btn-sm" title="Profile Settings">
-          <span>⚙️</span> Profile
         </button>
         <button id="btn-preview-toggle" class="btn btn-primary btn-sm" title="Preview Company Excel">
           <span>👁️</span> Preview
@@ -37,17 +33,22 @@
   </header>
 
   <main class="container">
-    <!-- Profile & Defaults Card (Collapsible) -->
+    <!-- Slim Profile Bar (Expandable) -->
     <section id="profile-card" class="card profile-card collapsed">
-      <div class="card-header" id="profile-header-click">
-        <div class="card-title">
-          <span>👤</span>
-          <h3>Employee & Company Profile</h3>
-          <span class="badge badge-success" id="profile-saved-badge">Saved</span>
+      <div class="profile-summary-bar" id="profile-header-click">
+        <div class="profile-info-left">
+          <span class="profile-avatar">👤</span>
+          <div class="profile-labels">
+            <span class="profile-name" id="profile-display-name">Sai Krishna Meesala</span>
+            <span class="profile-sub" id="profile-display-sub">NOVAMESH, COFORGE • ₹4/km Bike</span>
+          </div>
         </div>
-        <span class="accordion-arrow">▼</span>
+        <div class="profile-info-right">
+          <span class="badge badge-success">Saved</span>
+          <span class="accordion-arrow">▼</span>
+        </div>
       </div>
-      <div class="card-body">
+      <div class="card-body profile-dropdown-body">
         <div class="grid grid-2">
           <div class="form-group">
             <label for="emp-name">Employee Name</label>
@@ -77,47 +78,43 @@
       </div>
     </section>
 
-    <!-- Multi-Day Tabs Bar -->
-    <section class="days-nav-section">
-      <div class="section-top">
-        <label class="section-label">Travel Days / Sheets</label>
-        <button id="btn-add-day" class="btn btn-sm btn-secondary">
+    <!-- Compact Day Selector & Quick Actions Strip -->
+    <section class="day-selector-card card">
+      <div class="day-tabs-header">
+        <span class="sub-label">Travel Date / Sheet</span>
+        <button id="btn-add-day" class="btn btn-xs btn-secondary">
           <span>+</span> Add Day
         </button>
       </div>
+
+      <!-- Horizontal Tabs -->
       <div class="days-tabs-scroll" id="days-tabs-container">
         <!-- Rendered by JS -->
       </div>
-    </section>
 
-    <!-- Active Day Info Bar -->
-    <div class="day-meta-bar card">
-      <div class="day-meta-inputs">
-        <div class="meta-field">
-          <span class="meta-label">Date:</span>
-          <input type="date" id="active-day-date" class="input input-sm">
+      <!-- Compact Active Day Controls -->
+      <div class="active-day-controls">
+        <div class="date-picker-inline">
+          <span class="calendar-icon">📅</span>
+          <input type="date" id="active-day-date" class="input-date-clean">
         </div>
-        <div class="meta-field">
-          <span class="meta-label">Sheet Name:</span>
-          <input type="text" id="active-day-sheetname" class="input input-sm" placeholder="DD-MM-YYYY">
+        <div class="day-action-buttons">
+          <button id="btn-quick-food" class="btn btn-sm btn-food" title="Add standard ₹600 Food Allowance">
+            <span>🍽️</span> +₹600 Food
+          </button>
+          <button id="btn-reverse-trip" class="btn btn-sm btn-outline" title="Repeat last trip in reverse">
+            <span>🔄</span> Return
+          </button>
+          <button id="btn-delete-day" class="btn btn-sm btn-danger-ghost" title="Delete this day">
+            <span>🗑️</span>
+          </button>
         </div>
       </div>
-      <div class="day-quick-actions">
-        <button id="btn-quick-food" class="btn btn-sm btn-food" title="Add standard ₹600 Food Allowance">
-          <span>🍽️</span> +₹600 Food
-        </button>
-        <button id="btn-reverse-trip" class="btn btn-sm btn-outline" title="Repeat last trip in reverse">
-          <span>🔄</span> Return Log
-        </button>
-        <button id="btn-delete-day" class="btn btn-sm btn-danger-ghost" title="Delete this day">
-          <span>🗑️</span>
-        </button>
-      </div>
-    </div>
+    </section>
 
     <!-- Travel Log Entry Card -->
     <section class="card entry-card" id="entry-card">
-      <div class="card-header">
+      <div class="card-header entry-card-header">
         <div class="card-title">
           <span>📍</span>
           <h3 id="entry-card-title">Add Travel Log</h3>
@@ -126,27 +123,39 @@
       </div>
 
       <div class="card-body">
-        <!-- 1. Route: From & To First -->
-        <div class="route-grid">
-          <div class="form-group">
-            <label for="log-from">From (Origin)</label>
-            <input type="text" id="log-from" class="input" placeholder="e.g. Machavaram" list="locations-list">
+        <!-- 1. Route: Native Mobile Map-style Stacked Route -->
+        <div class="route-mobile-box">
+          <div class="route-track-line">
+            <span class="route-dot origin-dot"></span>
+            <span class="route-line"></span>
+            <span class="route-dot dest-dot"></span>
           </div>
-          <button type="button" id="btn-swap-locations" class="btn-swap" title="Swap From and To">
+
+          <div class="route-inputs-col">
+            <div class="route-field">
+              <label for="log-from" class="route-label">From (Origin)</label>
+              <input type="text" id="log-from" class="input route-input" placeholder="e.g. Machavaram" list="locations-list">
+            </div>
+
+            <div class="route-divider"></div>
+
+            <div class="route-field">
+              <label for="log-to" class="route-label">To (Destination)</label>
+              <input type="text" id="log-to" class="input route-input" placeholder="e.g. Guntur Bus Station" list="locations-list">
+            </div>
+          </div>
+
+          <button type="button" id="btn-swap-locations" class="btn-swap-floating" title="Swap From and To">
             ⇄
           </button>
-          <div class="form-group">
-            <label for="log-to">To (Destination)</label>
-            <input type="text" id="log-to" class="input" placeholder="e.g. Guntur Bus Station" list="locations-list">
-          </div>
         </div>
 
         <datalist id="locations-list">
           <!-- Populated dynamically with frequent locations -->
         </datalist>
 
-        <!-- 2. Travel Mode Second -->
-        <div class="form-group">
+        <!-- 2. Travel Mode Pills -->
+        <div class="form-group mode-section">
           <label class="field-label">Travel Mode</label>
           <div class="mode-pill-grid" id="mode-pills">
             <button type="button" class="mode-pill active" data-mode="bike">
@@ -192,31 +201,35 @@
           </div>
         </div>
 
-        <!-- 3. Amount & Distance (KM) Third -->
-        <div class="grid grid-2" id="calc-grid">
-          <div class="form-group" id="km-group">
-            <label for="log-km">Distance (KM)</label>
-            <div class="input-with-calc">
-              <input type="number" id="log-km" class="input" placeholder="e.g. 10" step="0.1">
-              <div class="calc-badge" id="calc-badge">
-                <span id="calc-preview">10 km × ₹4 = ₹40</span>
-              </div>
+        <!-- 3. Distance & Amount Grid -->
+        <div class="calc-row-mobile" id="calc-grid">
+          <div class="form-group km-input-wrap" id="km-group">
+            <label for="log-km">Distance</label>
+            <div class="input-suffix-box">
+              <input type="number" id="log-km" class="input" placeholder="0" step="0.1">
+              <span class="suffix">KM</span>
+            </div>
+            <div class="calc-badge" id="calc-badge">
+              <span id="calc-preview">10 km × ₹4 = ₹40</span>
             </div>
           </div>
-          <div class="form-group">
-            <label for="log-amount" id="amount-label">Amount (₹)</label>
-            <input type="number" id="log-amount" class="input input-highlight" placeholder="0" step="1">
+
+          <div class="form-group amount-input-wrap">
+            <label for="log-amount" id="amount-label">Amount</label>
+            <div class="input-prefix-box">
+              <span class="prefix">₹</span>
+              <input type="number" id="log-amount" class="input input-highlight" placeholder="0" step="1">
+            </div>
           </div>
         </div>
 
-        <!-- 4. Purpose & Quick Chips Fourth -->
-        <div class="form-group">
+        <!-- 4. Purpose & Chips -->
+        <div class="form-group purpose-section">
           <label for="log-purpose">Purpose / Issue Description</label>
-          <input type="text" id="log-purpose" class="input" placeholder="e.g. Collect material from HUB">
+          <input type="text" id="log-purpose" class="input" placeholder="e.g. to Collect material From HUB">
           <div class="chips-container" id="purpose-chips">
             <button type="button" class="chip">to Collect material From HUB</button>
-            <button type="button" class="chip">after maeterial collect to home and check contents</button>
-            <button type="button" class="chip">going to guntur with material Box Chassis</button>
+            <button type="button" class="chip">with material Box Chassis</button>
             <button type="button" class="chip">Chassis replacement complete</button>
             <button type="button" class="chip">Going to hometown bus</button>
             <button type="button" class="chip">Going to home by auto</button>
@@ -225,13 +238,13 @@
           </div>
         </div>
 
-        <!-- Submit & Edit Actions -->
+        <!-- Submit & Edit Buttons -->
         <div class="entry-actions-row">
           <button type="button" id="btn-submit-log" class="btn btn-primary btn-block btn-lg">
             <span>+</span> Add Travel Log
           </button>
           <button type="button" id="btn-cancel-edit" class="btn btn-secondary btn-lg hidden">
-            Cancel Edit
+            Cancel
           </button>
         </div>
       </div>
@@ -242,7 +255,7 @@
       <div class="card-header">
         <div class="card-title">
           <span>📋</span>
-          <h3 id="logs-card-title">Travel Logs for this Day</h3>
+          <h3 id="logs-card-title">Day Logs</h3>
         </div>
         <span class="badge badge-primary" id="day-logs-count">0 logs</span>
       </div>
@@ -273,11 +286,11 @@
       </div>
     </section>
 
-    <!-- Overall Total & Big Export Bar -->
+    <!-- Bottom Floating Bar -->
     <section class="export-floating-bar">
       <div class="export-bar-content">
         <div class="overall-totals">
-          <span class="overall-label">Grand Total (All Days):</span>
+          <span class="overall-label">Grand Total:</span>
           <span class="overall-val font-mono" id="grand-total-val">₹0</span>
         </div>
         <button id="btn-export-excel" class="btn btn-success btn-lg">
@@ -310,9 +323,9 @@
       </div>
 
       <div class="modal-footer">
-        <span class="preview-note">✓ Guarantees 100% exact layout, headers, and footer sign-off blocks.</span>
+        <span class="preview-note">✓ 100% exact layout with company sign-off blocks.</span>
         <button id="btn-modal-export" class="btn btn-success">
-          <span>📥</span> Download Excel (.xlsx)
+          <span>📥</span> Download (.xlsx)
         </button>
       </div>
     </div>
