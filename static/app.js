@@ -1,4 +1,4 @@
-// CFR Travel Expense Assistant - Optimized for Mobile, In-Place Editing & Sheet Deletion
+// CFR Travel Expense Assistant - Optimized for Mobile, In-Place Editing, Sheet Deletion, Drag & Drop Reordering & 3-Dot Menu
 
 (function () {
   'use strict';
@@ -42,6 +42,12 @@
 
   let activeMode = 'bike';
   let editingLogIndex = -1;
+  let activeOpenMenuIndex = -1; // Index of the currently open 3-dot menu
+
+  // Drag and drop state
+  let draggedLogIndex = null;
+  let touchStartY = 0;
+  let touchActiveCard = null;
 
   // DOM Elements
   const empNameInput = document.getElementById('emp-name');
@@ -197,6 +203,7 @@
         if (editingLogIndex !== -1) {
           cancelEdit();
         }
+        closeAllMenus();
         state.activeDayIndex = idx;
         renderDayTabs();
         syncActiveDayUI();
@@ -263,7 +270,6 @@
     grandTotalVal.textContent = `₹${grand.toLocaleString('en-IN')}`;
   }
 
-  // Delete Sheet Logic
   function deleteSheet(index) {
     if (state.days.length <= 1) {
       const day = state.days[0];
@@ -354,9 +360,18 @@
     other: '🏷️'
   };
 
+  // Close any open 3-dot dropdown menu
+  function closeAllMenus() {
+    activeOpenMenuIndex = -1;
+    document.querySelectorAll('.menu-dropdown').forEach(m => m.remove());
+    document.querySelectorAll('.btn-menu.active').forEach(b => b.classList.remove('active'));
+  }
+
+  // Render Logs Timeline with Drag & Drop handle + 3-Dot menu
   function renderLogsTimeline() {
     const day = getActiveDay();
     logsTimeline.innerHTML = '';
+    closeAllMenus();
 
     if (!day || !day.legs || day.legs.length === 0) {
       logsTimeline.innerHTML = `
@@ -370,11 +385,14 @@
     day.legs.forEach((log, idx) => {
       const card = document.createElement('div');
       card.className = `leg-card ${idx === editingLogIndex ? 'active-editing' : ''}`;
+      card.setAttribute('draggable', 'true');
+      card.dataset.index = idx;
 
       const icon = modeIcons[log.mode] || '🏷️';
       const kmText = log.km ? `<span class="leg-mode-tag">(${log.km} KM)</span>` : '';
 
       card.innerHTML = `
+        <div class="drag-handle" title="Drag to reorder" data-index="${idx}">⠿</div>
         <span class="leg-index">${idx + 1}</span>
         <div class="leg-route">
           <div class="leg-route-main">
@@ -389,30 +407,201 @@
           <span class="leg-amount">₹${Number(log.amount || 0).toLocaleString('en-IN')}</span>
           <span class="leg-mode-tag">${log.mode.toUpperCase()} ${kmText}</span>
         </div>
-        <div class="log-actions">
-          <button type="button" class="btn-edit-log" title="Edit this log" data-index="${idx}">
-            ✏️
-          </button>
-          <button type="button" class="btn-del-leg" title="Delete log" data-index="${idx}">
-            ✕
-          </button>
+        <div class="menu-wrap">
+          <button type="button" class="btn-menu" title="More options" data-index="${idx}">⋮</button>
         </div>
       `;
 
-      card.querySelector('.btn-edit-log').addEventListener('click', (e) => {
+      // 3-Dot Menu click handler
+      const btnMenu = card.querySelector('.btn-menu');
+      btnMenu.addEventListener('click', (e) => {
         e.stopPropagation();
-        startEditingLog(idx);
+        toggleMenu(idx, btnMenu, card.querySelector('.menu-wrap'));
       });
 
-      card.querySelector('.btn-del-leg').addEventListener('click', (e) => {
-        e.stopPropagation();
-        deleteLog(idx);
-      });
+      // Desktop HTML5 Drag & Drop handlers
+      setupDesktopDrag(card, idx);
+
+      // Mobile Touch Drag handlers on the drag handle
+      const dragHandle = card.querySelector('.drag-handle');
+      setupTouchDrag(dragHandle, card, idx);
 
       logsTimeline.appendChild(card);
     });
   }
 
+  // Three-dot Menu toggle
+  function toggleMenu(index, button, container) {
+    if (activeOpenMenuIndex === index) {
+      closeAllMenus();
+      return;
+    }
+
+    closeAllMenus();
+    activeOpenMenuIndex = index;
+    button.classList.add('active');
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'menu-dropdown';
+    dropdown.innerHTML = `
+      <button type="button" class="menu-item edit-action">
+        <span>✏️</span> Edit Log
+      </button>
+      <button type="button" class="menu-item danger delete-action">
+        <span>🗑️</span> Delete Log
+      </button>
+    `;
+
+    dropdown.querySelector('.edit-action').addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllMenus();
+      startEditingLog(index);
+    });
+
+    dropdown.querySelector('.delete-action').addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllMenus();
+      deleteLog(index);
+    });
+
+    container.appendChild(dropdown);
+  }
+
+  // --- Drag and Drop Reordering Implementation ---
+
+  function reorderLogs(fromIndex, toIndex) {
+    if (fromIndex === toIndex || fromIndex === null || toIndex === null) return;
+    const day = getActiveDay();
+    if (!day || !day.legs) return;
+
+    const [movedLog] = day.legs.splice(fromIndex, 1);
+    day.legs.splice(toIndex, 0, movedLog);
+
+    // If editing a log, adjust the editingLogIndex to track the moved log
+    if (editingLogIndex === fromIndex) {
+      editingLogIndex = toIndex;
+    } else if (editingLogIndex > fromIndex && editingLogIndex <= toIndex) {
+      editingLogIndex--;
+    } else if (editingLogIndex < fromIndex && editingLogIndex >= toIndex) {
+      editingLogIndex++;
+    }
+
+    renderLogsTimeline();
+    updateDayCalculations();
+    showToast(`✓ Log moved to #${toIndex + 1}`);
+  }
+
+  // Desktop Drag & Drop
+  function setupDesktopDrag(card, index) {
+    card.addEventListener('dragstart', (e) => {
+      draggedLogIndex = index;
+      card.classList.add('is-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', index);
+      closeAllMenus();
+    });
+
+    card.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (draggedLogIndex === null || draggedLogIndex === index) return;
+
+      const rect = card.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (e.clientY < mid) {
+        card.classList.add('drag-over-top');
+        card.classList.remove('drag-over-bottom');
+      } else {
+        card.classList.add('drag-over-bottom');
+        card.classList.remove('drag-over-top');
+      }
+    });
+
+    card.addEventListener('dragleave', () => {
+      card.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+
+    card.addEventListener('drop', (e) => {
+      e.preventDefault();
+      card.classList.remove('drag-over-top', 'drag-over-bottom');
+      if (draggedLogIndex === null || draggedLogIndex === index) return;
+
+      const rect = card.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      let targetIndex = index;
+      if (e.clientY >= mid && draggedLogIndex < index) {
+        targetIndex = index;
+      } else if (e.clientY < mid && draggedLogIndex > index) {
+        targetIndex = index;
+      }
+
+      reorderLogs(draggedLogIndex, targetIndex);
+      draggedLogIndex = null;
+    });
+
+    card.addEventListener('dragend', () => {
+      card.classList.remove('is-dragging', 'drag-over-top', 'drag-over-bottom');
+      document.querySelectorAll('.leg-card').forEach(c => c.classList.remove('drag-over-top', 'drag-over-bottom', 'is-dragging'));
+      draggedLogIndex = null;
+    });
+  }
+
+  // Mobile Touch Drag on Handle
+  function setupTouchDrag(handle, card, index) {
+    let currentTargetIndex = null;
+
+    handle.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      touchStartY = e.touches[0].clientY;
+      draggedLogIndex = index;
+      touchActiveCard = card;
+      card.classList.add('is-dragging');
+      closeAllMenus();
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', (e) => {
+      if (draggedLogIndex === null || !touchActiveCard) return;
+      const touchY = e.touches[0].clientY;
+
+      // Find the card under current touch position
+      const elem = document.elementFromPoint(e.touches[0].clientX, touchY);
+      const targetCard = elem ? elem.closest('.leg-card') : null;
+
+      document.querySelectorAll('.leg-card').forEach(c => c.classList.remove('drag-over-top', 'drag-over-bottom'));
+
+      if (targetCard && targetCard !== touchActiveCard) {
+        const targetIdx = parseInt(targetCard.dataset.index, 10);
+        if (!isNaN(targetIdx)) {
+          currentTargetIndex = targetIdx;
+          const rect = targetCard.getBoundingClientRect();
+          if (touchY < rect.top + rect.height / 2) {
+            targetCard.classList.add('drag-over-top');
+          } else {
+            targetCard.classList.add('drag-over-bottom');
+          }
+        }
+      }
+    }, { passive: true });
+
+    handle.addEventListener('touchend', () => {
+      if (draggedLogIndex !== null && currentTargetIndex !== null && draggedLogIndex !== currentTargetIndex) {
+        reorderLogs(draggedLogIndex, currentTargetIndex);
+      }
+      document.querySelectorAll('.leg-card').forEach(c => c.classList.remove('drag-over-top', 'drag-over-bottom', 'is-dragging'));
+      draggedLogIndex = null;
+      currentTargetIndex = null;
+      touchActiveCard = null;
+    });
+
+    handle.addEventListener('touchcancel', () => {
+      document.querySelectorAll('.leg-card').forEach(c => c.classList.remove('drag-over-top', 'drag-over-bottom', 'is-dragging'));
+      draggedLogIndex = null;
+      currentTargetIndex = null;
+      touchActiveCard = null;
+    });
+  }
+
+  // --- In-Place Edit Flow ---
   function startEditingLog(index) {
     const day = getActiveDay();
     if (!day || !day.legs[index]) return;
@@ -512,6 +701,13 @@
     const day = getActiveDay();
     if (!day) return;
 
+    const targetLog = day.legs[index];
+    const desc = targetLog ? `${targetLog.from || 'Origin'} ➔ ${targetLog.to || 'Destination'}` : `Log #${index + 1}`;
+    
+    if (!confirm(`Delete log #${index + 1} (${desc})?`)) {
+      return;
+    }
+
     if (editingLogIndex === index) {
       cancelEdit();
     } else if (editingLogIndex > index) {
@@ -573,8 +769,9 @@
     showToast('Reversed previous route! Tap Add Travel Log when ready.');
   }
 
-  // Excel Preview Modal
+  // --- Excel Preview Modal ---
   function openExcelPreview() {
+    closeAllMenus();
     previewSheetSelect.innerHTML = '';
     state.days.forEach((day, idx) => {
       const logs = day.legs || [];
@@ -731,6 +928,7 @@
     excelPreviewTableContainer.innerHTML = html;
   }
 
+  // --- Excel Export ---
   async function exportExcel() {
     showToast('⏳ Generating company voucher Excel...');
 
@@ -1009,6 +1207,7 @@
     window.URL.revokeObjectURL(url);
   }
 
+  // --- Sample Data Loader ---
   async function loadSampleData() {
     if (!confirm('Load reference sample data from October 9 & 10? This will replace current draft.')) {
       return;
@@ -1161,7 +1360,6 @@
       showToast('✓ New sheet added');
     });
 
-    // Delete current active sheet button
     btnDeleteDay.addEventListener('click', () => {
       deleteSheet(state.activeDayIndex);
     });
@@ -1183,6 +1381,13 @@
 
     previewSheetSelect.addEventListener('change', () => {
       renderExcelPreviewSheet(parseInt(previewSheetSelect.value, 10));
+    });
+
+    // Close any open 3-dot menu when tapping anywhere else on the document
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.menu-wrap')) {
+        closeAllMenus();
+      }
     });
   }
 

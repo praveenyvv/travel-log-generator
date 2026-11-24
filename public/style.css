@@ -851,24 +851,27 @@ label, .field-label {
   color: #b45309;
 }
 
-/* Logs Timeline */
+/* Logs Timeline & Drag/Drop Styling */
 .legs-timeline {
   display: flex;
   flex-direction: column;
   gap: 6px;
   margin-bottom: 12px;
+  min-height: 40px;
 }
 
 .leg-card {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto auto 1fr auto auto;
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
   background: #f8fafc;
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
-  transition: all 0.12s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  user-select: none;
+  position: relative;
 }
 
 .leg-card:hover {
@@ -882,12 +885,54 @@ label, .field-label {
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
 }
 
+/* Drag Handle */
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 28px;
+  color: var(--text-light);
+  cursor: grab;
+  font-size: 1.1rem;
+  line-height: 1;
+  border-radius: var(--radius-xs);
+  transition: color 0.15s ease, background 0.15s ease;
+  touch-action: none;
+}
+
+.drag-handle:hover {
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Dragging state */
+.leg-card.is-dragging {
+  opacity: 0.45;
+  border: 2px dashed var(--primary);
+  background: var(--primary-light);
+  transform: scale(0.99);
+}
+
+.leg-card.drag-over-top {
+  border-top: 3px solid var(--primary) !important;
+}
+
+.leg-card.drag-over-bottom {
+  border-bottom: 3px solid var(--primary) !important;
+}
+
 .leg-index {
   font-size: 0.72rem;
   font-family: var(--font-mono);
   font-weight: 700;
   color: var(--text-light);
   width: 16px;
+  text-align: center;
 }
 
 .leg-route {
@@ -941,42 +986,81 @@ label, .field-label {
   color: var(--text-muted);
 }
 
-.log-actions {
+/* Three-Dot Menu Button & Popover */
+.menu-wrap {
+  position: relative;
   display: flex;
-  gap: 3px;
   align-items: center;
 }
 
-.btn-edit-log {
+.btn-menu {
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 3px 6px;
-  font-size: 0.75rem;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  font-weight: bold;
   border-radius: var(--radius-xs);
   transition: all 0.12s ease;
+  line-height: 1;
 }
 
-.btn-edit-log:hover {
+.btn-menu:hover, .btn-menu.active {
   color: var(--primary);
-  border-color: var(--primary);
   background: var(--primary-light);
+  border-color: #bfdbfe;
 }
 
-.btn-del-leg {
-  background: transparent;
+.menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
+  z-index: 50;
+  min-width: 130px;
+  overflow: hidden;
+  animation: menuFadeIn 0.15s ease;
+}
+
+@keyframes menuFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
   border: none;
-  color: var(--text-light);
+  background: transparent;
+  text-align: left;
   cursor: pointer;
-  padding: 3px 5px;
-  font-size: 0.9rem;
-  border-radius: var(--radius-xs);
-  transition: all 0.12s ease;
+  color: var(--text-main);
+  transition: background 0.1s ease;
 }
 
-.btn-del-leg:hover {
+.menu-item:hover {
+  background: #f1f5f9;
+}
+
+.menu-item.danger {
   color: var(--danger);
+  border-top: 1px solid var(--border);
+}
+
+.menu-item.danger:hover {
   background: var(--danger-light);
 }
 
