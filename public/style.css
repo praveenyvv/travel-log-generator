@@ -253,26 +253,35 @@ body {
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding-bottom: 2px;
-  scrollbar-width: none;
+  padding-bottom: 3px;
+  scrollbar-width: thin;
 }
 
 .days-tabs-scroll::-webkit-scrollbar {
-  display: none;
+  height: 3px;
 }
 
+.days-tabs-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+/* Day Tab with Content & Delete Cross */
 .day-tab {
   display: flex;
-  flex-direction: column;
-  padding: 6px 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 10px;
   background: #f8fafc;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   cursor: pointer;
   white-space: nowrap;
-  min-width: 110px;
+  min-width: 125px;
   transition: all 0.15s ease;
   user-select: none;
+  position: relative;
 }
 
 .day-tab:hover {
@@ -284,6 +293,12 @@ body {
   background: #ffffff;
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.day-tab-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .day-tab-title {
@@ -303,13 +318,31 @@ body {
   color: var(--primary);
 }
 
+.tab-del-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 0.75rem;
+  border-radius: var(--radius-xs);
+  transition: all 0.12s ease;
+  line-height: 1;
+}
+
+.tab-del-btn:hover {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
 .active-day-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding-top: 6px;
   border-top: 1px dashed var(--border);
+  flex-wrap: wrap;
 }
 
 .date-picker-inline {
@@ -339,8 +372,9 @@ body {
 
 .day-action-buttons {
   display: flex;
-  gap: 4px;
+  gap: 5px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 /* Route Box - Native Ride/Travel App Style */
@@ -755,6 +789,17 @@ label, .field-label {
   background: #fef3c7;
   border: 1px solid #fde68a;
   color: #92400e;
+}
+
+.btn-danger-outline {
+  background: #ffffff;
+  color: var(--danger);
+  border: 1px solid #fca5a5;
+}
+
+.btn-danger-outline:hover {
+  background: var(--danger-light);
+  border-color: var(--danger);
 }
 
 .btn-danger-ghost {

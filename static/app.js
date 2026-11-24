@@ -1,4 +1,4 @@
-// CFR Travel Expense Assistant - Optimized for Mobile & In-Place Editing
+// CFR Travel Expense Assistant - Optimized for Mobile, In-Place Editing & Sheet Deletion
 
 (function () {
   'use strict';
@@ -180,10 +180,19 @@
       const dayTotal = logs.reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
       const tab = document.createElement('div');
       tab.className = `day-tab ${idx === state.activeDayIndex ? 'active' : ''}`;
+
+      const delBtnHtml = state.days.length > 1 
+        ? `<button type="button" class="tab-del-btn" title="Delete sheet ${day.sheetName || day.date}" data-index="${idx}">✕</button>`
+        : '';
+
       tab.innerHTML = `
-        <span class="day-tab-title">${day.sheetName || day.date}</span>
-        <span class="day-tab-sub">₹${dayTotal.toLocaleString('en-IN')} (${logs.length})</span>
+        <div class="day-tab-info">
+          <span class="day-tab-title">${day.sheetName || day.date}</span>
+          <span class="day-tab-sub">₹${dayTotal.toLocaleString('en-IN')} (${logs.length})</span>
+        </div>
+        ${delBtnHtml}
       `;
+
       tab.addEventListener('click', () => {
         if (editingLogIndex !== -1) {
           cancelEdit();
@@ -192,6 +201,17 @@
         renderDayTabs();
         syncActiveDayUI();
       });
+
+      if (state.days.length > 1) {
+        const delBtn = tab.querySelector('.tab-del-btn');
+        if (delBtn) {
+          delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteSheet(idx);
+          });
+        }
+      }
+
       daysTabsContainer.appendChild(tab);
     });
 
@@ -241,6 +261,43 @@
       grand += Math.max(0, sub - adv);
     });
     grandTotalVal.textContent = `₹${grand.toLocaleString('en-IN')}`;
+  }
+
+  // Delete Sheet Logic
+  function deleteSheet(index) {
+    if (state.days.length <= 1) {
+      const day = state.days[0];
+      if (confirm(`This is your only sheet (${day.sheetName || day.date}). Do you want to reset and clear all logs on it?`)) {
+        day.legs = [];
+        day.advances = 0;
+        if (editingLogIndex !== -1) cancelEdit();
+        renderDayTabs();
+        syncActiveDayUI();
+        showToast('✓ Sheet reset to empty');
+      }
+      return;
+    }
+
+    const target = state.days[index];
+    const sheetName = target.sheetName || target.date || `Sheet ${index + 1}`;
+    const logCount = (target.legs || []).length;
+
+    const confirmMsg = logCount > 0
+      ? `Delete sheet "${sheetName}" and its ${logCount} travel ${logCount === 1 ? 'log' : 'logs'}?`
+      : `Delete empty sheet "${sheetName}"?`;
+
+    if (confirm(confirmMsg)) {
+      if (editingLogIndex !== -1) cancelEdit();
+
+      state.days.splice(index, 1);
+      if (state.activeDayIndex >= state.days.length) {
+        state.activeDayIndex = state.days.length - 1;
+      }
+
+      renderDayTabs();
+      syncActiveDayUI();
+      showToast(`✓ Sheet "${sheetName}" deleted`);
+    }
   }
 
   function updateModeUI(mode) {
@@ -1101,21 +1158,12 @@
       state.activeDayIndex = state.days.length - 1;
       renderDayTabs();
       syncActiveDayUI();
-      showToast('✓ New day added');
+      showToast('✓ New sheet added');
     });
 
+    // Delete current active sheet button
     btnDeleteDay.addEventListener('click', () => {
-      if (state.days.length <= 1) {
-        showToast('At least one day is required');
-        return;
-      }
-      if (confirm(`Delete day tab "${getActiveDay().sheetName}"?`)) {
-        state.days.splice(state.activeDayIndex, 1);
-        state.activeDayIndex = Math.max(0, state.activeDayIndex - 1);
-        renderDayTabs();
-        syncActiveDayUI();
-        showToast('Day removed');
-      }
+      deleteSheet(state.activeDayIndex);
     });
 
     btnLoadSample.addEventListener('click', loadSampleData);
